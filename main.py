@@ -33,34 +33,38 @@ SESSION = get_config("SESSION")
 ENDPOINT_API_KEY = get_config("ENDPOINT_API_KEY")
 GET_ENDPOINT = get_config("GET_ENDPOINT")
 UPDATE_ENDPOINT = get_config("UPDATE_ENDPOINT")
-TIMEOUT = 20
+CHECK_TIMEOUT = 20
+DELAY_TIMEOUT = 5
+CUST_HEADERS = {
+    "x-api-key": ENDPOINT_API_KEY
+}
 
 
 async def get_bots():
     async with ClientSession() as session:
         one = await session.post(
             GET_ENDPOINT,
-            headers={
-                "x-api-key": ENDPOINT_API_KEY
-            }
+            headers=CUST_HEADERS
         )
         return await one.json()
 
 
-async def update_data(username, ping_time, status):
+async def update_data(username, ping_time, online_status):
+    update_param_s = {
+        "username": username,
+        "ping_time": ping_time,
+        "online_status": 1 if online_status else 0
+    }
+    # logger.info(update_param_s)
     async with ClientSession() as session:
         one = await session.post(
             UPDATE_ENDPOINT,
-            json={
-                "username": username,
-                "ping": ping_time,
-                "status": status
-            },
-            headers={
-                "x-api-key": ENDPOINT_API_KEY
-            }
+            json=update_param_s,
+            headers=CUST_HEADERS
         )
-        return await one.text()
+        owt = await one.json()
+        # logger.info(owt)
+        return owt
 
 
 async def main():
@@ -68,27 +72,31 @@ async def main():
     client = TelegramClient(StringSession(SESSION), API_ID, API_HASH)
     async with client as user:
         for bot in bots:
+            bot_username = bot["username"]
             ping_time = 421
             online_status = False
-            async with user.conversation(bot, exclusive=False) as conv:
-                logger.info(f"pinging {bot}")
+            async with user.conversation(bot_username, exclusive=False) as conv:
+                if not bot["can_set_sticker_set"]:
+                    bot_username = "[XxXxX]"
+                logger.info(f"pinging {bot_username}")
                 try:
                     await conv.send_message("/start")
                     s_tart = time()
-                    reply = await conv.get_response(timeout=TIMEOUT)
+                    reply = await conv.get_response(timeout=CHECK_TIMEOUT)
                     e_nd_ie = time()
                     ping_time = round(e_nd_ie - s_tart, 2)
                     await reply.mark_read()
                 except asyncio.TimeoutError:
                     logger.warning(
-                        f"no response from {bot} even after {TIMEOUT} seconds"
+                        f"no response from {bot_username} even after {CHECK_TIMEOUT} seconds"
                     )
                 else:
                     online_status = True
-                    logger.info(f"{bot} responded in {ping_time} ms")
+                    logger.info(f"{bot_username} responded in {ping_time} ms")
                 finally:
                     logger.info("updating database")
-                    await update_data(bot, ping_time, online_status)
+                    await update_data(bot["username"], ping_time, online_status)
+            await asyncio.sleep(DELAY_TIMEOUT)
 
 
 if __name__ == "__main__":
