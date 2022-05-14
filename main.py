@@ -1,10 +1,10 @@
-import os
-import time
-import asyncio
-import logging
+from aiohttp import ClientSession
+from time import time
 from telethon import TelegramClient
 from telethon.sessions import StringSession
-from aiohttp import ClientSession
+import asyncio
+import os
+import logging
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -12,49 +12,85 @@ logging.basicConfig(
 logging.getLogger("telethon").setLevel(logging.WARNING)  # idc
 logger = logging.getLogger(__name__)
 
-API_ID = os.getenv("API_ID")
-API_HASH = os.getenv("API_HASH")
-SESSION = os.getenv("SESSION")
-BOTS = [b.strip() for b in os.getenv("BOTS").split(",")]
-API_KEY = os.getenv("API_KEY")
-ENDPOINT = os.getenv("ENDPOINT")
+
+def get_config(name: str, d_v=None, should_prompt=False):
+    """ wrapper for getting the credentials """
+    """ accepts one mandatory variable
+    and prompts for the value, if not available """
+    val = os.environ.get(name, d_v)
+    if not val and should_prompt:
+        try:
+            val = input(f"enter {name}'s value: ")
+        except EOFError:
+            val = d_v
+        print("\n")
+    return val
+
+
+API_ID = int(get_config("API_ID", "6"))
+API_HASH = get_config("API_HASH")
+SESSION = get_config("SESSION")
+ENDPOINT_API_KEY = get_config("ENDPOINT_API_KEY")
+GET_ENDPOINT = get_config("GET_ENDPOINT")
+UPDATE_ENDPOINT = get_config("UPDATE_ENDPOINT")
 TIMEOUT = 20
 
 
-async def update_data(username, response, status):
+async def get_bots():
     async with ClientSession() as session:
-        async with session.post(ENDPOINT, json={
-            "username": username, "ping": response, "status": status
-        }, headers={"x-api-key": API_KEY}) as res:
-            await res.json()  # why?
+        one = await session.post(
+            GET_ENDPOINT,
+            headers={
+                "x-api-key": ENDPOINT_API_KEY
+            }
+        )
+        return await one.json()
 
 
-async def main(client: TelegramClient):
+async def update_data(username, ping_time, status):
+    async with ClientSession() as session:
+        one = await session.post(
+            UPDATE_ENDPOINT,
+            json={
+                "username": username,
+                "ping": ping_time,
+                "status": status
+            },
+            headers={
+                "x-api-key": ENDPOINT_API_KEY
+            }
+        )
+        return await one.text()
+
+
+async def main():
+    bots = await get_bots()
+    client = TelegramClient(StringSession(SESSION), API_ID, API_HASH)
     async with client as user:
-        for bot in BOTS:
-            res = 0
-            status = False
+        for bot in bots:
+            ping_time = 421
+            online_status = False
             async with user.conversation(bot, exclusive=False) as conv:
                 logger.info(f"pinging {bot}")
                 try:
-                    await conv.send_message('/start')
-                    then = time.time()
+                    await conv.send_message("/start")
+                    s_tart = time()
                     reply = await conv.get_response(timeout=TIMEOUT)
-                    res = round(time.time() - then, 2)
+                    e_nd_ie = time()
+                    ping_time = round(e_nd_ie - s_tart, 2)
                     await reply.mark_read()
                 except asyncio.TimeoutError:
-                    res = 968  # bgmi
-                    logger.warning(f"no response from {bot} even after {TIMEOUT} seconds")
+                    logger.warning(
+                        f"no response from {bot} even after {TIMEOUT} seconds"
+                    )
                 else:
-                    status = True
-                    logger.info(f"{bot} responded in {res} ms")
+                    online_status = True
+                    logger.info(f"{bot} responded in {ping_time} ms")
                 finally:
                     logger.info("updating database")
-                    await update_data(bot, res, status)
+                    await update_data(bot, ping_time, online_status)
 
 
 if __name__ == "__main__":
-    client = TelegramClient(StringSession(SESSION), API_ID, API_HASH)
     loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(main(client))
+    loop.run_until_complete(main())
