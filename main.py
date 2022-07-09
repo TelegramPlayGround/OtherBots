@@ -33,6 +33,7 @@ SESSION = get_config("SESSION")
 ENDPOINT_API_KEY = get_config("ENDPOINT_API_KEY")
 GET_ENDPOINT = get_config("GET_ENDPOINT")
 UPDATE_ENDPOINT = get_config("UPDATE_ENDPOINT")
+OOTU_ENDPOINT = get_config("OOTU_ENDPOINT")
 CHECK_TIMEOUT = 20
 DELAY_TIMEOUT = 5
 CUST_HEADERS = {
@@ -67,8 +68,19 @@ async def update_data(username, ping_time, online_status):
         return owt
 
 
+async def ootu():
+    async with ClientSession() as session:
+        one = await session.post(
+            OOTU_ENDPOINT,
+            headers=CUST_HEADERS
+        )
+        return await one.json()
+
+
 async def main():
     bots = await get_bots()
+    # log in as user account,
+    # and send /start to all the bots
     client = TelegramClient(StringSession(SESSION), API_ID, API_HASH)
     async with client as user:
         for bot in bots:
@@ -97,6 +109,8 @@ async def main():
                     logger.info("updating database")
                     await update_data(bot["username"], ping_time, online_status)
             await asyncio.sleep(DELAY_TIMEOUT)
+    # finally, do this
+    await ootu()
 
 
 if __name__ == "__main__":
