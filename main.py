@@ -87,7 +87,10 @@ async def main():
             bot_username = bot["username"]
             ping_time = 421
             online_status = False
-            async with user.conversation(bot_username, exclusive=False) as conv:
+            async with user.conversation(
+                bot_username,
+                exclusive=False
+            ) as conv:
                 if not bot["can_set_sticker_set"]:
                     bot_username = "[XxXxX]"
                 logger.info(f"pinging {bot_username}")
@@ -100,14 +103,19 @@ async def main():
                     await reply.mark_read()
                 except asyncio.TimeoutError:
                     logger.warning(
-                        f"no response from {bot_username} even after {CHECK_TIMEOUT} seconds"
+                        "no response from "
+                        f"{bot_username} even after {CHECK_TIMEOUT} seconds"
                     )
                 else:
                     online_status = True
                     logger.info(f"{bot_username} responded in {ping_time} ms")
                 finally:
                     logger.info("updating database")
-                    await update_data(bot["username"], ping_time, online_status)
+                    await update_data(
+                        bot["username"],
+                        ping_time,
+                        online_status
+                    )
             await asyncio.sleep(DELAY_TIMEOUT)
     # finally, do this
     await ootu()
