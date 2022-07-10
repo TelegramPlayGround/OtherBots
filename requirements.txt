@@ -1,5 +1,5 @@
 # for interacting with other bots
-https://github.com/TelegramPlayGround/Telethon/archive/bd5f11c.zip
+https://github.com/TelegramPlayGround/Telethon/archive/ad5d30a.zip
 cryptg==0.3.1
 
 # GET / POST network requests

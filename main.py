@@ -79,44 +79,45 @@ async def ootu():
 
 async def main():
     bots = await get_bots()
-    # log in as user account,
-    # and send /start to all the bots
-    client = TelegramClient(StringSession(SESSION), API_ID, API_HASH)
-    async with client as user:
-        for bot in bots:
-            bot_username = bot["username"]
-            ping_time = 421
-            online_status = False
-            async with user.conversation(
-                bot_username,
-                exclusive=False
-            ) as conv:
-                if not bot["can_set_sticker_set"]:
-                    bot_username = "[XxXxX]"
-                logger.info(f"pinging {bot_username}")
-                try:
-                    await conv.send_message("/start")
-                    s_tart = time()
-                    reply = await conv.get_response(timeout=CHECK_TIMEOUT)
-                    e_nd_ie = time()
-                    ping_time = round(e_nd_ie - s_tart, 2)
-                    await reply.mark_read()
-                except asyncio.TimeoutError:
-                    logger.warning(
-                        "no response from "
-                        f"{bot_username} even after {CHECK_TIMEOUT} seconds"
-                    )
-                else:
-                    online_status = True
-                    logger.info(f"{bot_username} responded in {ping_time} ms")
-                finally:
-                    logger.info("updating database")
-                    await update_data(
-                        bot["username"],
-                        ping_time,
-                        online_status
-                    )
-            await asyncio.sleep(DELAY_TIMEOUT)
+    if len(bots) > 0:
+        # log in as user account,
+        # and send /start to all the bots
+        client = TelegramClient(StringSession(SESSION), API_ID, API_HASH)
+        async with client as user:
+            for bot in bots:
+                bot_username = bot["username"]
+                ping_time = 421
+                online_status = False
+                async with user.conversation(
+                    bot_username,
+                    exclusive=False
+                ) as conv:
+                    if not bot["can_set_sticker_set"]:
+                        bot_username = "[XxXxX]"
+                    logger.info(f"pinging {bot_username}")
+                    try:
+                        await conv.send_message("/start")
+                        s_tart = time()
+                        reply = await conv.get_response(timeout=CHECK_TIMEOUT)
+                        e_nd_ie = time()
+                        ping_time = round(e_nd_ie - s_tart, 2)
+                        await reply.mark_read()
+                    except asyncio.TimeoutError:
+                        logger.warning(
+                            "no response from "
+                            f"{bot_username} even after {CHECK_TIMEOUT} seconds"
+                        )
+                    else:
+                        online_status = True
+                        logger.info(f"{bot_username} responded in {ping_time} ms")
+                    finally:
+                        logger.info("updating database")
+                        await update_data(
+                            bot["username"],
+                            ping_time,
+                            online_status
+                        )
+                await asyncio.sleep(DELAY_TIMEOUT)
     # finally, do this
     await ootu()
 
