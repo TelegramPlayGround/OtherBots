@@ -5,6 +5,8 @@ from telethon.sessions import StringSession
 import asyncio
 import os
 import logging
+from json import loads
+from json.decoder import JSONDecodeError
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -27,15 +29,15 @@ def get_config(name: str, d_v=None, should_prompt=False):
     return val
 
 
-API_ID = int(get_config("API_ID", "6"))
-API_HASH = get_config("API_HASH")
-SESSION = get_config("SESSION")
-ENDPOINT_API_KEY = get_config("ENDPOINT_API_KEY")
-GET_ENDPOINT = get_config("GET_ENDPOINT")
-UPDATE_ENDPOINT = get_config("UPDATE_ENDPOINT")
-OOTU_ENDPOINT = get_config("OOTU_ENDPOINT")
-CHECK_TIMEOUT = 20
-DELAY_TIMEOUT = 5
+API_ID = int(get_config("API_ID", should_prompt=True))
+API_HASH = get_config("API_HASH", should_prompt=True)
+SESSION = get_config("SESSION", should_prompt=True)
+ENDPOINT_API_KEY = get_config("ENDPOINT_API_KEY", "thisismysecret")
+GET_ENDPOINT = get_config("GET_ENDPOINT", "http://example.com/getallbots")
+UPDATE_ENDPOINT = get_config("UPDATE_ENDPOINT", "http://example.com/updatebotstatus")
+OOTU_ENDPOINT = get_config("OOTU_ENDPOINT", "http://example.com/ootumightwork")
+CHECK_TIMEOUT = int(get_config("CHECK_TIMEOUT", "25"))
+DELAY_TIMEOUT = int(get_config("CHECK_TIMEOUT", "5"))
 CUST_HEADERS = {
     "x-api-key": ENDPOINT_API_KEY
 }
@@ -47,7 +49,11 @@ async def get_bots():
             GET_ENDPOINT,
             headers=CUST_HEADERS
         )
-        return await one.json()
+        owt = await one.text()
+        try:
+            return loads(owt)
+        except JSONDecodeError:
+            return []
 
 
 async def update_data(username, ping_time, online_status):
@@ -63,9 +69,7 @@ async def update_data(username, ping_time, online_status):
             json=update_param_s,
             headers=CUST_HEADERS
         )
-        owt = await one.json()
-        # logger.info(owt)
-        return owt
+        return await one.text()
 
 
 async def ootu():
@@ -74,7 +78,7 @@ async def ootu():
             OOTU_ENDPOINT,
             headers=CUST_HEADERS
         )
-        return await one.json()
+        return await one.text()
 
 
 async def main():
