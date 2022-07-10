@@ -37,7 +37,7 @@ GET_ENDPOINT = get_config("GET_ENDPOINT", "http://example.com/getallbots")
 UPDATE_ENDPOINT = get_config("UPDATE_ENDPOINT", "http://example.com/updatebotstatus")
 OOTU_ENDPOINT = get_config("OOTU_ENDPOINT", "http://example.com/ootumightwork")
 CHECK_TIMEOUT = int(get_config("CHECK_TIMEOUT", "25"))
-DELAY_TIMEOUT = int(get_config("CHECK_TIMEOUT", "5"))
+DELAY_TIMEOUT = int(get_config("DELAY_TIMEOUT", "5"))
 CUST_HEADERS = {
     "x-api-key": ENDPOINT_API_KEY
 }

@@ -31,5 +31,8 @@ jobs:
           ENDPOINT_API_KEY: ${{ secrets.ENDPOINT_API_KEY }}
           GET_ENDPOINT: ${{ secrets.GET_ENDPOINT }}
           UPDATE_ENDPOINT: ${{ secrets.UPDATE_ENDPOINT }}
+          OOTU_ENDPOINT: ${{ secrets.OOTU_ENDPOINT }}
+          CHECK_TIMEOUT: ${{ secrets.CHECK_TIMEOUT }}
+          DELAY_TIMEOUT: ${{ secrets.DELAY_TIMEOUT }}
 
         run: python main.py
