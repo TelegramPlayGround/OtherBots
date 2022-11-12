@@ -40,6 +40,7 @@ ENDPOINT_API_KEY = get_config("ENDPOINT_API_KEY", "thisismysecret")
 GET_ENDPOINT = get_config("GET_ENDPOINT", "http://example.com/getallbots")
 UPDATE_ENDPOINT = get_config("UPDATE_ENDPOINT", "http://example.com/updatebotstatus")
 OOTU_ENDPOINT = get_config("OOTU_ENDPOINT", "http://example.com/ootumightwork")
+CHECK_TIMEOUT = int(get_config("CHECK_TIMEOUT", "25"))
 DELAY_TIMEOUT = int(get_config("DELAY_TIMEOUT", "5"))
 TG_FLOOD_SLEEP_THRESHOLD = int(get_config("TG_FLOOD_SLEEP_THRESHOLD", "60"))
 TG_DEVICE_MODEL = get_config("TG_DEVICE_MODEL")
@@ -129,16 +130,25 @@ async def main():
         client.add_event_handler(nme, NewMessage(
             incoming=True
         ))
-        # send /start to all the bots
-        reqs = [
-            SendMessageRequest(
-                peer=bot["username"],
-                message=bot["start_param"],
-            ) for bot in bots
-        ]
+        # start the userbot
         await client.start()
         cache = await client.get_me()
-        await client(reqs)
+        # send /start to all the bots
+        reqs = []
+        for bot in bots:
+            if len(reqs) > 10:
+                await client(reqs)
+                reqs = []
+                await asyncio.sleep(CHECK_TIMEOUT)
+            reqs.append(
+                SendMessageRequest(
+                    peer=bot["username"],
+                    message=bot["start_param"],
+                )
+            )
+        if len(reqs) > 0:
+            await client(reqs)
+            reqs = []
         await asyncio.sleep(DELAY_TIMEOUT)
         await client.disconnect()      
     # finally, do this
