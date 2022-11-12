@@ -32,7 +32,9 @@ jobs:
           GET_ENDPOINT: ${{ secrets.GET_ENDPOINT }}
           UPDATE_ENDPOINT: ${{ secrets.UPDATE_ENDPOINT }}
           OOTU_ENDPOINT: ${{ secrets.OOTU_ENDPOINT }}
-          CHECK_TIMEOUT: ${{ secrets.CHECK_TIMEOUT }}
           DELAY_TIMEOUT: ${{ secrets.DELAY_TIMEOUT }}
-
+          TG_FLOOD_SLEEP_THRESHOLD: ${{ secrets.TG_FLOOD_SLEEP_THRESHOLD }}
+          TG_DEVICE_MODEL: ${{ secrets.TG_DEVICE_MODEL }}
+          TG_SYSTEM_VERSION: ${{ secrets.TG_SYSTEM_VERSION }}
+          TG_APP_VERSION: ${{ secrets.TG_APP_VERSION }}
         run: python main.py
