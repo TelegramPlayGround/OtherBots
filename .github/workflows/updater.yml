@@ -39,3 +39,11 @@ jobs:
           TG_SYSTEM_VERSION: ${{ secrets.TG_SYSTEM_VERSION }}
           TG_APP_VERSION: ${{ secrets.TG_APP_VERSION }}
         run: python main.py
+      
+      - name: Commit and push changes
+        run: |
+          git config user.email "durov2005@gmail.com"
+          git config user.name "GitHub Action <Pavel Durov>"
+          git add index.html
+          git commit -m "update"
+          git push origin main

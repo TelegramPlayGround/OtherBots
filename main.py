@@ -156,7 +156,9 @@ async def main():
         await asyncio.sleep(DELAY_TIMEOUT)
         await client.disconnect()      
     # finally, do this
-    await ootu()
+    txtContent = await ootu()
+    with open("index.html", "w+") as fod:
+        fod.write(txtContent)
 
 
 if __name__ == "__main__":
