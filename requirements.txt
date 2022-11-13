@@ -1,6 +1,6 @@
 # for interacting with other bots
-https://github.com/TelegramPlayGround/Telethon/archive/2a3b666.zip
-cryptg==0.4.0
+Pyrogram==2.0.60
+TgCrypto==1.2.5
 
 # GET / POST network requests
 aiohttp==3.7.4
