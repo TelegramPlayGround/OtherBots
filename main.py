@@ -6,11 +6,10 @@ import os
 from aiohttp import ClientSession
 from json import loads
 from json.decoder import JSONDecodeError
-from telethon import TelegramClient
-from telethon.sessions import StringSession
-from telethon.events import NewMessage
-from telethon.tl.functions.messages import SendMessageRequest
-from telethon.tl.types import User
+from pyrogram import Client
+from pyrogram import filters
+from pyrogram.handlers import MessageHandler
+from pyrogram.types import Message
 
 logging.basicConfig(
     level=logging.INFO,
@@ -90,30 +89,28 @@ async def ootu():
         return await one.text()
 
 
-async def nme(evt: NewMessage.Event):
-    # logger.info("updating database")
-    usernameEntity = (await evt.client.get_entity(
-        evt.sender_id
-    ))
-    if not isinstance(usernameEntity, User):
-        return False
-    if not usernameEntity.bot:
-        return False
-    username = usernameEntity.username
-    if username:
-        username = username.lower()
-    replied = await evt.get_reply_message()
-    if not replied:
-        replied = evt
-    ping_time = round(
-        evt.date.timestamp() - replied.date.timestamp(),
-        2
-    )
-    await evt.mark_read()
-    return await update_data(
-        username,
-        ping_time
-    )
+async def nme(client: Client, message: Message):
+    if (
+        message and
+        message.from_user and
+        message.from_user.is_bot
+    ):
+        usernameEntity = message.from_user
+        username = usernameEntity.username
+        if username:
+            username = username.lower()
+        replied = message.reply_to_message
+        if not replied:
+            replied = message
+        ping_time = round(
+            message.date.timestamp() - replied.date.timestamp(),
+            2
+        )
+        # ? no friendly method to mark read
+        return await update_data(
+            username,
+            ping_time
+        )
 
 
 async def main():
@@ -124,40 +121,38 @@ async def main():
     )
     if len(bots) > 0:
         # log in as user account,
-        client = TelegramClient(
-            StringSession(SESSION),
-            API_ID,
-            API_HASH,
-            flood_sleep_threshold=TG_FLOOD_SLEEP_THRESHOLD,
+        client = Client(
+            "bot-status-api-updater",
+            session_string=SESSION,
+            api_id=API_ID,
+            api_hash=API_HASH,
+            sleep_threshold=TG_FLOOD_SLEEP_THRESHOLD,
             device_model=TG_DEVICE_MODEL,
             system_version=TG_SYSTEM_VERSION,
             app_version=TG_APP_VERSION,
         )
         # register event handler to check bot responses
-        client.add_event_handler(nme, NewMessage(
-            incoming=True
-        ))
+        client.add_handler(
+            MessageHandler(
+                nme,
+                filters.incoming
+            )
+        )
         # start the userbot
         await client.start()
-        cache = await client.get_me()
+        cache = client.me
         # send /start to all the bots
         reqs = []
         for bot in bots:
-            if len(reqs) > 10:
-                await client(reqs)
-                reqs = []
-                await asyncio.sleep(CHECK_TIMEOUT)
             reqs.append(
-                SendMessageRequest(
-                    peer=bot["username"],
-                    message=bot["start_param"],
+                client.send_message(
+                    bot["username"],
+                    bot["start_param"],
                 )
             )
-        if len(reqs) > 0:
-            await client(reqs)
-            reqs = []
+        await asyncio.gather(*reqs)
         await asyncio.sleep(DELAY_TIMEOUT)
-        await client.disconnect()      
+        await client.stop()      
     # finally, do this
     txtContent = await ootu()
     with open("index.html", "w+") as fod:
