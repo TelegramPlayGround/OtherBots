@@ -91,9 +91,12 @@ async def ootu():
 
 async def nme(evt: NewMessage.Event):
     # logger.info("updating database")
-    username = (await evt.client.get_entity(
+    usernameEntity = (await evt.client.get_entity(
         evt.sender_id
-    )).username
+    ))
+    if not usernameEntity.bot:
+        return False
+    username = usernameEntity.username
     if username:
         username = username.lower()
     replied = await evt.get_reply_message()
@@ -103,7 +106,8 @@ async def nme(evt: NewMessage.Event):
         evt.date.timestamp() - replied.date.timestamp(),
         2
     )
-    await update_data(
+    await evt.mark_read()
+    return await update_data(
         username,
         ping_time
     )
