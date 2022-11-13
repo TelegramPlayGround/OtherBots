@@ -1,15 +1,16 @@
 
+import asyncio
+import logging
+import os
+
 from aiohttp import ClientSession
-from time import time
+from json import loads
+from json.decoder import JSONDecodeError
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.events import NewMessage
 from telethon.tl.functions.messages import SendMessageRequest
-import asyncio
-import os
-import logging
-from json import loads
-from json.decoder import JSONDecodeError
+from telethon.tl.types import User
 
 logging.basicConfig(
     level=logging.INFO,
@@ -94,6 +95,8 @@ async def nme(evt: NewMessage.Event):
     usernameEntity = (await evt.client.get_entity(
         evt.sender_id
     ))
+    if not isinstance(usernameEntity, User):
+        return False
     if not usernameEntity.bot:
         return False
     username = usernameEntity.username
