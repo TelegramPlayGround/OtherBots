@@ -66,11 +66,11 @@ async def get_bots():
             return []
 
 
-async def update_data(username, ping_time):
+async def update_data(username, ping_time, online_status):
     update_param_s = {
         "username": username,
         "ping_time": ping_time,
-        "online_status": 1,
+        "online_status": online_status,
     }
     # logger.info(update_param_s)
     async with ClientSession() as session:
@@ -115,7 +115,8 @@ async def nme(evt: NewMessage.Event):
     unUsedBots.append(username)
     return await update_data(
         username,
-        ping_time
+        ping_time,
+        1
     )
 
 
@@ -168,7 +169,8 @@ async def main():
         if botUsername not in unUsedBots:
             await update_data(
                 botUsername,
-                963
+                963,
+                0
             )
     # finally, do this
     txtContent = await ootu()
