@@ -50,6 +50,7 @@ TG_APP_VERSION = get_config("TG_APP_VERSION")
 CUST_HEADERS = {
     "x-api-key": ENDPOINT_API_KEY
 }
+unUsedBots = []
 
 
 async def get_bots():
@@ -110,6 +111,8 @@ async def nme(evt: NewMessage.Event):
         2
     )
     await evt.mark_read()
+    global unUsedBots
+    unUsedBots.append(username)
     return await update_data(
         username,
         ping_time
@@ -157,7 +160,16 @@ async def main():
             await client(reqs)
             reqs = []
         await asyncio.sleep(DELAY_TIMEOUT)
-        await client.disconnect()      
+        await client.disconnect()
+    # update non-responsive bot status
+    global unUsedBots
+    for bot in bots:
+        botUsername = bot["username"].lower()
+        if botUsername not in unUsedBots:
+            await update_data(
+                botUsername,
+                963
+            )
     # finally, do this
     txtContent = await ootu()
     with open("index.html", "w+") as fod:
