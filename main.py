@@ -121,57 +121,46 @@ async def nme(evt: NewMessage.Event):
 
 
 async def main():
-    # get the list of bots
-    bots = await get_bots()
-    logger.info(
-        f"Found {len(bots)} Bots"
+    # log in as user account,
+    client = TelegramClient(
+        StringSession(SESSION),
+        API_ID,
+        API_HASH,
+        flood_sleep_threshold=TG_FLOOD_SLEEP_THRESHOLD,
+        device_model=TG_DEVICE_MODEL,
+        system_version=TG_SYSTEM_VERSION,
+        app_version=TG_APP_VERSION,
     )
-    if len(bots) > 0:
-        # log in as user account,
-        client = TelegramClient(
-            StringSession(SESSION),
-            API_ID,
-            API_HASH,
-            flood_sleep_threshold=TG_FLOOD_SLEEP_THRESHOLD,
-            device_model=TG_DEVICE_MODEL,
-            system_version=TG_SYSTEM_VERSION,
-            app_version=TG_APP_VERSION,
-        )
-        # register event handler to check bot responses
-        client.add_event_handler(nme, NewMessage(
-            incoming=True
-        ))
-        # start the userbot
-        await client.start()
-        cache = await client.get_me()
-        # send /start to all the bots
-        reqs = []
-        for bot in bots:
-            if len(reqs) > 10:
-                await client(reqs)
-                reqs = []
-                await asyncio.sleep(CHECK_TIMEOUT)
+    # register event handler to check bot responses
+    client.add_event_handler(nme, NewMessage(
+        incoming=True
+    ))
+    # start the userbot
+    await client.start()
+    cache = await client.get_me()
+    # send /start to all the bots
+    start_mesg = "/start"
+    reqs = []
+    async for dlg in client.iter_dialogs(
+        limit=None
+    ):
+        if (
+            dlg and
+            dlg.entity and
+            dlg.is_user and
+            dlg.entity.bot
+        ):
             reqs.append(
                 SendMessageRequest(
-                    peer=bot["username"],
-                    message=bot["start_param"],
+                    peer=dlg.entity,
+                    message=start_mesg,
                 )
             )
-        if len(reqs) > 0:
-            await client(reqs)
-            reqs = []
-        await asyncio.sleep(DELAY_TIMEOUT)
-        await client.disconnect()
-    # update non-responsive bot status
-    global unUsedBots
-    for bot in bots:
-        botUsername = bot["username"].lower()
-        if botUsername not in unUsedBots:
-            await update_data(
-                botUsername,
-                963,
-                0
-            )
+    if len(reqs) > 0:
+        await client(reqs)
+        reqs = []
+    await asyncio.sleep(DELAY_TIMEOUT)
+    await client.disconnect()
     # finally, do this
     txtContent = await ootu()
     with open("index.html", "w+") as fod:
