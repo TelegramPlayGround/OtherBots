@@ -144,9 +144,6 @@ async def main():
     async for dlg in client.iter_dialogs(
         limit=None
     ):
-        if len(reqs) > CHECK_TIMEOUT:
-            await client(reqs)
-            reqs = []
         if (
             dlg and
             dlg.entity and
