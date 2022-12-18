@@ -50,7 +50,7 @@ TG_APP_VERSION = get_config("TG_APP_VERSION")
 CUST_HEADERS = {
     "x-api-key": ENDPOINT_API_KEY
 }
-unUsedBots = []
+usedBots = []
 
 
 async def get_bots():
@@ -111,8 +111,8 @@ async def nme(evt: NewMessage.Event):
         2
     )
     await evt.mark_read()
-    global unUsedBots
-    unUsedBots.append(username)
+    global usedBots
+    usedBots.append(username)
     return await update_data(
         username,
         ping_time,
@@ -129,7 +129,7 @@ async def main():
     if len(bots) > 0:
         # log in as user account,
         client = TelegramClient(
-            StringSession(SESSION),
+            SESSION,
             API_ID,
             API_HASH,
             flood_sleep_threshold=TG_FLOOD_SLEEP_THRESHOLD,
@@ -147,7 +147,7 @@ async def main():
         # send /start to all the bots
         reqs = []
         for bot in bots:
-            if len(reqs) > 10:
+            if len(reqs) > CHECK_TIMEOUT:
                 await client(reqs)
                 reqs = []
                 await asyncio.sleep(CHECK_TIMEOUT)
@@ -157,21 +157,23 @@ async def main():
                     message=bot["start_param"],
                 )
             )
-        if len(reqs) > 0:
+        if len(reqs) > (
+            CHECK_TIMEOUT - CHECK_TIMEOUT
+        ):
             await client(reqs)
             reqs = []
+            await asyncio.sleep(CHECK_TIMEOUT)
         await asyncio.sleep(DELAY_TIMEOUT)
         await client.disconnect()
-    # update non-responsive bot status
-    global unUsedBots
-    for bot in bots:
-        botUsername = bot["username"].lower()
-        if botUsername not in unUsedBots:
-            await update_data(
-                botUsername,
-                963,
-                0
-            )
+        # update non-responsive bot status
+        for bot in bots:
+            botUsername = bot["username"].lower()
+            if botUsername not in usedBots:
+                await update_data(
+                    botUsername,
+                    963,
+                    0
+                )
     # finally, do this
     txtContent = await ootu()
     with open("index.html", "w+") as fod:
