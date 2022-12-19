@@ -129,7 +129,7 @@ async def main():
     if len(bots) > 0:
         # log in as user account,
         client = TelegramClient(
-            SESSION,
+            StringSession(SESSION),
             API_ID,
             API_HASH,
             flood_sleep_threshold=TG_FLOOD_SLEEP_THRESHOLD,
