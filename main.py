@@ -8,6 +8,7 @@ from json import loads
 from json.decoder import JSONDecodeError
 from telethon import TelegramClient
 from telethon.sessions import StringSession
+from telethon.errors import RPCError
 from telethon.events import NewMessage
 from telethon.tl.functions.messages import SendMessageRequest
 from telethon.tl.types import User
@@ -148,7 +149,10 @@ async def main():
         reqs = []
         for bot in bots:
             if len(reqs) > CHECK_TIMEOUT:
-                await client(reqs)
+                try:
+                    await client(reqs)
+                except RPCError:
+                    pass
                 reqs = []
                 await asyncio.sleep(CHECK_TIMEOUT)
             reqs.append(
@@ -160,7 +164,10 @@ async def main():
         if len(reqs) > (
             CHECK_TIMEOUT - CHECK_TIMEOUT
         ):
-            await client(reqs)
+            try:
+                await client(reqs)
+            except RPCError:
+                pass
             reqs = []
             await asyncio.sleep(CHECK_TIMEOUT)
         await asyncio.sleep(DELAY_TIMEOUT)
