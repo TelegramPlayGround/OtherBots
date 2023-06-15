@@ -112,6 +112,8 @@ async def nme(evt: NewMessage.Event):
         2
     )
     await evt.mark_read()
+    if "off-line" in evt.raw_text:
+        return False
     global usedBots
     usedBots.append(username)
     return await update_data(
